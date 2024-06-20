@@ -7,8 +7,11 @@
     <style>
       body {
         font-family: monospace;
-        margin-left: 24rem;
-        margin-right: 24rem;
+        display: flex;
+        justify-content: center;
+      }
+      #content {
+        max-width: 512px;
       }
       #rules {
         padding-bottom: 1rem;
@@ -16,44 +19,168 @@
     </style>
   </head>
   <body>
-    <div id="rules">
-      <h1>Conway's Game of Life</h1>
-      <div>
-        <ol>
-          <li>
-            Any live cell with fewer than two live neighbours dies, as if by
-            underpopulation.
-          </li>
-          <li>
-            Any live cell with two or three live neighbours lives on to the next
-            generation.
-          </li>
-          <li>
-            Any live cell with more than three live neighbours dies, as if by
-            overpopulation.
-          </li>
-          <li>
-            Any dead cell with exactly three live neighbours becomes a live
-            cell, as if by reproduction.
-          </li>
-        </ol>
-        <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life"
-          >[wikipedia]</a
-        >
+    <div id="content">
+      <div id="rules">
+        <h1>Conway's Game of Life</h1>
+        <div>
+          <ol>
+            <li>
+              Any live cell with fewer than two live neighbours dies, as if by
+              underpopulation.
+            </li>
+            <li>
+              Any live cell with two or three live neighbours lives on to the
+              next generation.
+            </li>
+            <li>
+              Any live cell with more than three live neighbours dies, as if by
+              overpopulation.
+            </li>
+            <li>
+              Any dead cell with exactly three live neighbours becomes a live
+              cell, as if by reproduction.
+            </li>
+          </ol>
+          <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life"
+            >[wikipedia]</a
+          >
+        </div>
       </div>
-    </div>
 
-    <canvas id="primaryCanvas" width="512" height="512"></canvas>
+      <canvas id="primaryCanvas" width="512" height="512"></canvas>
 
-    <div id="controls">
-      <select>
-        <option value="seed1">Oscillators - Blinkers</option>
-      </select>
-      <button>Pause / Resume</button>
+      <div id="controls">
+        <select id="seedSelection"></select>
+        <button id="pauseButton">Pause / Resume</button>
+        <button id="resetButton">Reset</button>
+      </div>
     </div>
 
     <script>
       const PALETTE = ["#FFE749", "#EE9A43", "#E67440", "#DE4D3D", "#CD0037"];
+
+      const seeds = {
+        "Oscillators - Blinkers": [
+          [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 1, 0, 0, 0, 0, 0, 1, 1, 1],
+          [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+          [1, 1, 1, 0, 0, 0, 0, 0, 1, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+        ],
+        "Oscillators - Toad": [
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+          [0, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+          [0, 0, 0, 0, 0, 1, 1, 1, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        "Oscillators - Beacon": [
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+          [0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+          [0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        "Spaceships - Glider": [
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+          [0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
+          [0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        "Spaceships - LWSS": [
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 1, 0, 0, 1, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+          [0, 1, 0, 0, 0, 1, 0, 0, 0, 0],
+          [0, 0, 1, 1, 1, 1, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        "Still Lifes - Block": [
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
+          [0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
+          [0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
+          [0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        "Still Lifes - Beehive": [
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+          [0, 1, 0, 0, 1, 0, 0, 0, 0, 0],
+          [0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
+          [0, 0, 0, 0, 0, 1, 0, 0, 1, 0],
+          [0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        "Still Lifes - Loaf": [
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+          [0, 1, 0, 0, 1, 0, 0, 0, 0, 0],
+          [0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+          [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
+          [0, 0, 0, 0, 0, 1, 0, 0, 1, 0],
+          [0, 0, 0, 0, 0, 0, 1, 0, 1, 0],
+          [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        "Still Lifes - Boat": [
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 1, 1, 0, 0, 0, 1, 1, 0, 0],
+          [0, 1, 0, 1, 0, 0, 1, 0, 1, 0],
+          [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 1, 1, 0, 0, 0, 1, 1, 0, 0],
+          [0, 1, 0, 1, 0, 0, 1, 0, 1, 0],
+          [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        "Still Lifes - Tub": [
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
+          [0, 1, 0, 1, 0, 0, 1, 0, 1, 0],
+          [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
+          [0, 1, 0, 1, 0, 0, 1, 0, 1, 0],
+          [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+      };
 
       function random(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -125,26 +252,34 @@
         }
       }
 
-      const button = document.querySelector("button");
+      function deepCopy(grid) {
+        return grid.map((row) => row.slice());
+      }
+
+      // populate select options with grid seeds
+      const select = document.querySelector("select");
+      Object.keys(seeds).forEach(function (item) {
+        var option = document.createElement("option");
+        option.textContent = item;
+        select.appendChild(option);
+      });
+
+      select.addEventListener("change", function () {
+        grid = deepCopy(seeds[select.value]);
+      });
 
       var paused = false;
-
-      button.addEventListener("click", function () {
+      const pauseButton = document.querySelector("#pauseButton");
+      pauseButton.addEventListener("click", function () {
         paused = !paused;
       });
 
-      var grid = [
-        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 0, 0, 0, 0, 0, 1, 1, 1],
-        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-        [1, 1, 1, 0, 0, 0, 0, 0, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-      ];
+      const resetButton = document.querySelector("#resetButton");
+      resetButton.addEventListener("click", function () {
+        grid = deepCopy(seeds[select.value]);
+      });
+
+      var grid = deepCopy(seeds[select.value]);
 
       var canvas = document.getElementById("primaryCanvas");
       var context = canvas.getContext("2d");
@@ -176,10 +311,10 @@
         context.font = "12px monospace";
         context.textAlign = "right";
         context.fillStyle = "black";
-        context.fillText(`FRAME ${frame / 10}`, w - padding - 4, 14);
+        context.fillText(`GEN ${frame / 10}`, w - padding - 4, 14);
 
         // deep-copy state to avoid active state manipulation
-        const previousState = grid.map((row) => row.slice());
+        const previousState = deepCopy(grid);
 
         for (var y = 0; y < previousState.length; y++) {
           for (var x = 0; x < previousState[0].length; x++) {
